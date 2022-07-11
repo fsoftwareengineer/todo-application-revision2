@@ -1,0 +1,67 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.1-SNAPSHOT'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+	maven { url 'https://repo.spring.io/snapshot' }
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.h2database:h2'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// https://mvnrepository.com/artifact/com.google.guava/guava
+	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
+	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	runtimeOnly 'mysql:mysql-connector-java'
+
+	// https://mvnrepository.com/artifact/org.springframework.security/spring-security-oauth2-client
+	implementation group: 'org.springframework.security', name: 'spring-security-oauth2-client', version: '5.6.1'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+task('release') {
+	/* ./gradlew build를 먼저 실행하라는 뜻이다. */
+	dependsOn("build")
+
+	doLast {
+		def stdout = new ByteArrayOutputStream()
+		/* exec - 커맨드 라인 프로세서; 파워셸/터미널에서 실행하는 것과 같다. */
+		exec {
+			/* $eb setenv SPRING_PROFILES_ACTIVE=prod */
+			commandLine 'eb', 'setenv', 'SPRING_PROFILES_ACTIVE=prod'
+			standardOutput = stdout
+		}
+		/* 결과 로깅을 위한 작업 */
+		println "eb setenv SPRING_PROFILES_ACTIVE=prod :\n$stdout";
+		exec {
+			/* $eb deploy */
+			commandLine 'eb', 'deploy'
+			standardOutput = stdout
+		}
+		println "eb deploy :\n$stdout";
+		println "Release succeeded."
+	}
+}
